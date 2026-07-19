@@ -59,10 +59,10 @@ class Container:
             self.sessionmaker, self.swapi_client, self.logger, self.lock_provider, settings.import_lock_ttl_seconds, settings.import_batch_size
         )
         self.film_service = FilmServiceImpl(
-            self.sessionmaker, self.swapi_client, self.logger, settings.import_batch_size
+            self.sessionmaker, self.swapi_client, self.logger, self.lock_provider, settings.import_lock_ttl_seconds, settings.import_batch_size
         )
         self.starship_service = StarshipServiceImpl(
-            self.sessionmaker, self.swapi_client, self.logger, settings.import_batch_size
+            self.sessionmaker, self.swapi_client, self.logger, self.lock_provider, settings.import_lock_ttl_seconds, settings.import_batch_size
         )
 
     async def dispose(self) -> None:
@@ -70,4 +70,5 @@ class Container:
         application shutdown.
         """
         await self.http_client.aclose()
+        await self.redis_client.aclose()
         await self.engine.dispose()
