@@ -23,9 +23,8 @@ def make_repository_mock() -> MagicMock:
 
 class FakeSessionContext:
     """A minimal async context manager standing in for the object returned
-    by `async_sessionmaker()` (i.e. `sessionmaker()`), so services under
-    test can do `async with self._sessionmaker() as session: ...` without
-    a real database connection.
+    by `async_sessionmaker()`, so services under test can do
+    `async with self._sessionmaker() as session: ...` without a real DB.
     """
 
     def __init__(self, session: AsyncMock) -> None:
@@ -39,10 +38,8 @@ class FakeSessionContext:
 
 
 def make_sessionmaker(session: AsyncMock):
-    """Builds a fake `async_sessionmaker`: a plain callable that returns
-    a `FakeSessionContext` wrapping the given mock session every time
-    it's called (mirroring real `sessionmaker()` semantics, where each
-    call opens a fresh session).
+    """Builds a fake `async_sessionmaker`: a callable returning a fresh
+    `FakeSessionContext` each call (mirroring real `sessionmaker()`).
     """
 
     def _sessionmaker() -> FakeSessionContext:
@@ -52,17 +49,30 @@ def make_sessionmaker(session: AsyncMock):
 
 
 def make_logger() -> logging.Logger:
-    """Returns a real (but muted) stdlib logger, since the app's Logger
-    contract *is* `logging.Logger` — no interface to mock.
+    """Returns a real (but muted) stdlib logger — the app's Logger
+    contract *is* `logging.Logger`, so there's no interface to mock.
     """
     return logging.getLogger("test")
 
 
+def make_lock_provider(cached: str | None = None, acquired: bool = True) -> MagicMock:
+    """Builds a mock `LockProvider`.
+
+    Args:
+        cached: Value returned by `get_value` (a cache hit when not None).
+        acquired: Whether `acquire` succeeds (winning the lock).
+    """
+    lock = MagicMock()
+    lock.get_value = AsyncMock(return_value=cached)
+    lock.set_value = AsyncMock()
+    lock.acquire = AsyncMock(return_value=acquired)
+    lock.release = AsyncMock(return_value=True)
+    return lock
+
+
 class FakeSWAPIClient:
-    """In-memory `SWAPIClient` double. Yields whatever fixed record lists
-    are configured; no network access. Implements the same async-generator
-    shape as `HTTPXSWAPIClient` without inheriting from the ABC, since a
-    test double only needs to satisfy the interface structurally.
+    """In-memory `SWAPIClient` double. Yields fixed record lists; no
+    network. Same async-generator shape as `HTTPXSWAPIClient`.
     """
 
     def __init__(

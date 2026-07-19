@@ -1,34 +1,48 @@
 from __future__ import annotations
 
+import unittest
+
 from app.domain.exceptions import DomainError, EntityNotFoundError, ExternalServiceError
 from app.domain.import_result import ImportResult
 
 
-def test_entity_not_found_error_message() -> None:
-    exc = EntityNotFoundError("Character", "abc-123")
-    assert "Character" in str(exc)
-    assert "abc-123" in str(exc)
-    assert exc.entity_name == "Character"
-    assert exc.identifier == "abc-123"
-    assert isinstance(exc, DomainError)
+class ExceptionTests(unittest.TestCase):
+    def test_entity_not_found_error_message(self) -> None:
+        exc = EntityNotFoundError("Character", "abc-123")
+        self.assertIn("Character", str(exc))
+        self.assertIn("abc-123", str(exc))
+        self.assertEqual(exc.entity_name, "Character")
+        self.assertEqual(exc.identifier, "abc-123")
+        self.assertIsInstance(exc, DomainError)
+
+    def test_external_service_error_message(self) -> None:
+        exc = ExternalServiceError("SWAPI", "timeout")
+        self.assertIn("SWAPI", str(exc))
+        self.assertIn("timeout", str(exc))
+        self.assertIsInstance(exc, DomainError)
 
 
-def test_external_service_error_message() -> None:
-    exc = ExternalServiceError("SWAPI", "timeout")
-    assert "SWAPI" in str(exc)
-    assert "timeout" in str(exc)
-    assert isinstance(exc, DomainError)
+class ImportResultTests(unittest.TestCase):
+    def test_defaults(self) -> None:
+        result = ImportResult("films")
+        self.assertEqual(result.resource, "films")
+        self.assertEqual(result.imported, 0)
+        self.assertEqual(result.batches, 0)
+
+    def test_to_dict(self) -> None:
+        result = ImportResult("people")
+        result.imported = 5
+        result.batches = 2
+        self.assertEqual(result.to_dict(), {"resource": "people", "imported": 5, "batches": 2})
+
+    def test_from_dict_round_trip(self) -> None:
+        data = {"resource": "starships", "imported": 36, "batches": 1}
+        result = ImportResult.from_dict(data)
+        self.assertEqual(result.resource, "starships")
+        self.assertEqual(result.imported, 36)
+        self.assertEqual(result.batches, 1)
+        self.assertEqual(result.to_dict(), data)
 
 
-def test_import_result_defaults() -> None:
-    result = ImportResult("films")
-    assert result.resource == "films"
-    assert result.imported == 0
-    assert result.batches == 0
-
-
-def test_import_result_to_dict() -> None:
-    result = ImportResult("people")
-    result.imported = 5
-    result.batches = 2
-    assert result.to_dict() == {"resource": "people", "imported": 5, "batches": 2}
+if __name__ == "__main__":
+    unittest.main()
