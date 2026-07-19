@@ -91,26 +91,43 @@ class HTTPXSWAPIClient(SWAPIClient):
             ExternalServiceError: If all retry attempts are exhausted.
         """
         last_error: Exception | None = None
+
         for attempt in range(1, self._max_retries + 1):
             try:
                 async with self._semaphore:
                     response = await self._client.get(url)
-                    if response.status_code in RETRYABLE_STATUS_CODES:
-                        raise httpx.HTTPStatusError(
-                            f"Retryable status {response.status_code}",
-                            request=response.request,
-                            response=response,
-                        )
                     response.raise_for_status()
                     return response.json()
-            except (httpx.TransportError, httpx.HTTPStatusError) as exc:
-                last_error = exc
-                self._logger.warning(
-                    "swapi_request_failed url=%s attempt=%s/%s error=%s",
-                    url, attempt, self._max_retries, exc,
-                )
-                if attempt < self._max_retries:
-                    await asyncio.sleep(self._backoff_base_seconds * (2 ** (attempt - 1)))
 
-        self._logger.error("swapi_request_exhausted url=%s error=%s", url, last_error)
-        raise ExternalServiceError("SWAPI", f"Failed to fetch '{url}' after {self._max_retries} attempts: {last_error}")
+            except httpx.HTTPStatusError as exc:
+                if exc.response.status_code not in RETRYABLE_STATUS_CODES:
+                    raise
+
+                last_error = exc
+
+            except httpx.TransportError as exc:
+                last_error = exc
+
+            self._logger.warning(
+                "swapi_request_failed url=%s attempt=%s/%s error=%s",
+                url,
+                attempt,
+                self._max_retries,
+                last_error,
+            )
+
+            if attempt < self._max_retries:
+                await asyncio.sleep(
+                    self._backoff_base_seconds * (2 ** (attempt - 1))
+                )
+
+        self._logger.error(
+            "swapi_request_exhausted url=%s error=%s",
+            url,
+            last_error,
+        )
+
+        raise ExternalServiceError(
+            "SWAPI",
+            f"Failed to fetch '{url}' after {self._max_retries} attempts: {last_error}",
+        )
