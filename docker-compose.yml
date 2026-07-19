@@ -17,6 +17,16 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+  
+  redis:
+    image: redis:7
+    container_name: swapi-redis
+    ports:
+      - "6381:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
 
 volumes:
   swapi_pg_data:
+  redis_data:
