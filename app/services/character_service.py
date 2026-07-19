@@ -101,6 +101,7 @@ class CharacterServiceImpl(CharacterServiceInterface):
 
         cached = await self.lock_provider.get_value(cache_key)
         if cached:
+            self._logger.info("Import characters: reading from cache")
             return ImportResult.from_dict(json.loads(cached))
 
         lock_key = "lock:characters:import"

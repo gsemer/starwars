@@ -3,6 +3,8 @@ from __future__ import annotations
 import logging
 import re
 import uuid
+import asyncio
+import json
 from typing import Any, Dict, List
 
 from sqlalchemy.ext.asyncio import async_sessionmaker
@@ -12,6 +14,8 @@ from app.domain.exceptions import EntityNotFoundError
 from app.domain.import_result import ImportResult
 from app.domain.interfaces.starship_service import StarshipService as StarshipServiceInterface
 from app.domain.interfaces.swapi_client import SWAPIClient
+from app.domain.interfaces.lock_provider import LockProvider
+from app.domain.exceptions import ExternalServiceError
 from app.domain.pagination import PageResult, PaginationParams
 from app.infrastructure.repositories.sqlalchemy_starship_repository import (
     SQLAlchemyStarshipRepository,
@@ -52,6 +56,9 @@ class StarshipServiceImpl(StarshipServiceInterface):
         sessionmaker: async_sessionmaker,
         swapi_client: SWAPIClient,
         logger: logging.Logger,
+        lock_provider: LockProvider,
+        lock_ttl: int,
+        cache_ttl: int = 60 * 60 * 24,
         batch_size: int = 50,
     ) -> None:
         """
@@ -64,6 +71,9 @@ class StarshipServiceImpl(StarshipServiceInterface):
         self._sessionmaker = sessionmaker
         self._swapi_client = swapi_client
         self._logger = logger
+        self.lock_provider = lock_provider
+        self.lock_ttl = lock_ttl
+        self.cache_ttl = cache_ttl
         self._batch_size = batch_size
 
     async def list_starships(
@@ -87,17 +97,50 @@ class StarshipServiceImpl(StarshipServiceInterface):
 
     async def import_starships(self) -> ImportResult:
         """See `StarshipService.import_starships`."""
-        result = ImportResult("starships")
-        batch: List[Dict[str, Any]] = []
-        async for record in self._swapi_client.fetch_starships():
-            batch.append(record)
-            if len(batch) >= self._batch_size:
+        cache_key = "starships:import_results"
+
+        cached = await self.lock_provider.get_value(cache_key)
+        if cached:
+            self._logger.info("Import starships: reading from cache")
+            return ImportResult.from_dict(json.loads(cached))
+
+        lock_key = "lock:starships:import"
+        token = str(uuid.uuid4())
+
+        aquired = await self.lock_provider.acquire(lock_key, token, self.lock_ttl)
+        if not aquired:
+            # Timeout 30 seconds
+            for _ in range(300):
+                await asyncio.sleep(0.1)
+
+                cached = await self.lock_provider.get_value(cache_key)
+                if cached:
+                    self._logger.info("Import starships: reading from cache")
+                    return ImportResult.from_dict(json.loads(cached))
+            
+            raise ExternalServiceError(
+                "Starwars API",
+                "Timed out waiting for starships import",
+            )
+        
+        try:
+            result = ImportResult("starships")
+            batch: List[Dict[str, Any]] = []
+            async for record in self._swapi_client.fetch_starships():
+                batch.append(record)
+                if len(batch) >= self._batch_size:
+                    await self._upsert_batch(batch, result)
+                    batch = []
+            if batch:
                 await self._upsert_batch(batch, result)
-                batch = []
-        if batch:
-            await self._upsert_batch(batch, result)
-        self._logger.info("import_completed resource=starships imported=%s batches=%s", result.imported, result.batches)
-        return result
+
+            await self.lock_provider.set_value(cache_key, json.dumps(result.__dict__), self.cache_ttl)
+
+            self._logger.info("import_completed resource=starships imported=%s batches=%s", result.imported, result.batches)
+            return result
+        
+        finally:
+            await self.lock_provider.release(lock_key, token)
 
     async def _upsert_batch(self, batch: List[Dict[str, Any]], result: ImportResult) -> None:
         """Upserts one batch of raw SWAPI starship records and links them
