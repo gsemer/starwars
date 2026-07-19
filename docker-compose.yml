@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16.2
+    container_name: swapi-postgres
+    environment:
+      POSTGRES_USER: swapi
+      POSTGRES_PASSWORD: swapi
+      POSTGRES_DB: swapi
+    ports:
+      - "5433:5432"
+    volumes:
+      - swapi_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U swapi -d swapi"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  swapi_pg_data:
