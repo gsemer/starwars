@@ -109,8 +109,8 @@ class CharacterServiceImpl(CharacterServiceInterface):
 
         aquired = await self.lock_provider.acquire(lock_key, token, self.lock_ttl)
         if not aquired:
-            # Timeout 30 seconds
-            for _ in range(300):
+            # Timeout 10 seconds
+            for _ in range(100):
                 await asyncio.sleep(0.1)
 
                 cached = await self.lock_provider.get_value(cache_key)
