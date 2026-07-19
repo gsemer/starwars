@@ -15,3 +15,11 @@ class ImportResult:
     def to_dict(self) -> Dict[str, Any]:
         """Serializes this result to a plain dict, e.g. for an API response."""
         return {"resource": self.resource, "imported": self.imported, "batches": self.batches}
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "ImportResult":
+        return cls(
+            resource=data["resource"],
+            imported=data["imported"],
+            batches=data["batches"],
+        )
