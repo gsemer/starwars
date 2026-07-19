@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     db_echo: bool = False
 
     redis_url: str = Field(default="redis://localhost:6381/0")
-    import_lock_ttl_seconds: int = 10
+    import_lock_ttl_seconds: int = 30
 
     swapi_base_url: str = Field(default="https://swapi.dev/api")
     swapi_timeout_seconds: float = 10.0
