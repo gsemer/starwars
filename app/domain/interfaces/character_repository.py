@@ -18,7 +18,7 @@ class CharacterRepository(ABC):
 
     @abstractmethod
     async def list_paginated(
-        self, page: int, page_size: int, name: Optional[str] = None
+        self, page: int, page_size: int
     ) -> PageResult[Character]:
         """Lists characters, optionally filtered by a case-insensitive
         substring match on `name`, using database-side pagination.

@@ -37,11 +37,10 @@ async def import_films(service: FilmService = Depends(get_film_service)) -> Impo
 async def list_films(
     page: int = Query(1, ge=1, description="1-indexed page number"),
     page_size: int = Query(20, ge=1, le=100, description="Number of items per page"),
-    title: str | None = Query(None, description="Case-insensitive substring match on title"),
     service: FilmService = Depends(get_film_service),
 ) -> Page[FilmRead]:
     """Lists/searches films already stored in the database."""
-    result = await service.list_films(PaginationParams(page=page, page_size=page_size), title)
+    result = await service.list_films(PaginationParams(page=page, page_size=page_size))
     return Page[FilmRead](
         items=[FilmRead.model_validate(f) for f in result.items],
         meta=PageMeta(total=result.total, page=result.page, page_size=result.page_size, total_pages=result.total_pages),

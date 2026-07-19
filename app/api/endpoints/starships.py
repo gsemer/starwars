@@ -41,11 +41,10 @@ async def import_starships(
 async def list_starships(
     page: int = Query(1, ge=1, description="1-indexed page number"),
     page_size: int = Query(20, ge=1, le=100, description="Number of items per page"),
-    name: str | None = Query(None, description="Case-insensitive substring match on name"),
     service: StarshipService = Depends(get_starship_service),
 ) -> Page[StarshipRead]:
     """Lists/searches starships already stored in the database."""
-    result = await service.list_starships(PaginationParams(page=page, page_size=page_size), name)
+    result = await service.list_starships(PaginationParams(page=page, page_size=page_size))
     return Page[StarshipRead](
         items=[StarshipRead.model_validate(s) for s in result.items],
         meta=PageMeta(total=result.total, page=result.page, page_size=result.page_size, total_pages=result.total_pages),

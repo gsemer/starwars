@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import uuid
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from app.domain.entities.film import Film
 from app.domain.import_result import ImportResult
@@ -20,7 +19,7 @@ class FilmService(ABC):
 
     @abstractmethod
     async def list_films(
-        self, pagination: PaginationParams, title: Optional[str] = None
+        self, pagination: PaginationParams
     ) -> PageResult[Film]:
         """Lists/searches stored films.
 

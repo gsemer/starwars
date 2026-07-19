@@ -41,11 +41,10 @@ async def import_characters(
 async def list_characters(
     page: int = Query(1, ge=1, description="1-indexed page number"),
     page_size: int = Query(20, ge=1, le=100, description="Number of items per page"),
-    name: str | None = Query(None, description="Case-insensitive substring match on name"),
     service: CharacterService = Depends(get_character_service),
 ) -> Page[CharacterRead]:
     """Lists/searches characters already stored in the database."""
-    result = await service.list_characters(PaginationParams(page=page, page_size=page_size), name)
+    result = await service.list_characters(PaginationParams(page=page, page_size=page_size))
     return Page[CharacterRead](
         items=[CharacterRead.model_validate(c) for c in result.items],
         meta=PageMeta(total=result.total, page=result.page, page_size=result.page_size, total_pages=result.total_pages),

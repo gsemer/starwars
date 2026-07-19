@@ -13,7 +13,7 @@ class StarshipRepository(ABC):
 
     @abstractmethod
     async def list_paginated(
-        self, page: int, page_size: int, name: Optional[str] = None
+        self, page: int, page_size: int
     ) -> PageResult[Starship]:
         """Lists starships, optionally filtered by a case-insensitive
         substring match on `name`, using database-side pagination.
@@ -21,7 +21,6 @@ class StarshipRepository(ABC):
         Args:
             page: 1-indexed page number.
             page_size: Number of items per page.
-            name: Optional case-insensitive substring to filter by name.
 
         Returns:
             A `PageResult` with the matching page of starships.

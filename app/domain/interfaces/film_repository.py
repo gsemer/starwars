@@ -13,7 +13,7 @@ class FilmRepository(ABC):
 
     @abstractmethod
     async def list_paginated(
-        self, page: int, page_size: int, name: Optional[str] = None
+        self, page: int, page_size: int
     ) -> PageResult[Film]:
         """Lists films, optionally filtered by a case-insensitive substring
         match on `title`, using database-side pagination.
@@ -21,7 +21,6 @@ class FilmRepository(ABC):
         Args:
             page: 1-indexed page number.
             page_size: Number of items per page.
-            name: Optional case-insensitive substring to filter by title.
 
         Returns:
             A `PageResult` with the matching page of films.

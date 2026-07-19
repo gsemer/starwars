@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import uuid
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from app.domain.entities.starship import Starship
 from app.domain.import_result import ImportResult
@@ -20,13 +19,12 @@ class StarshipService(ABC):
 
     @abstractmethod
     async def list_starships(
-        self, pagination: PaginationParams, name: Optional[str] = None
+        self, pagination: PaginationParams
     ) -> PageResult[Starship]:
         """Lists/searches stored starships.
 
         Args:
             pagination: Requested page and page size.
-            name: Optional case-insensitive substring to filter by name.
 
         Returns:
             A `PageResult` with the matching page of starships.

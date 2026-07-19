@@ -20,13 +20,12 @@ class CharacterService(ABC):
 
     @abstractmethod
     async def list_characters(
-        self, pagination: PaginationParams, name: Optional[str] = None
+        self, pagination: PaginationParams
     ) -> PageResult[Character]:
         """Lists/searches stored characters.
 
         Args:
             pagination: Requested page and page size.
-            name: Optional case-insensitive substring to filter by name.
 
         Returns:
             A `PageResult` with the matching page of characters.
