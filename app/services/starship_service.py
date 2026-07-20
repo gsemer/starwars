@@ -15,7 +15,7 @@ from app.domain.import_result import ImportResult
 from app.domain.interfaces.starship_service import StarshipService as StarshipServiceInterface
 from app.domain.interfaces.swapi_client import SWAPIClient
 from app.domain.interfaces.lock_provider import LockProvider
-from app.domain.exceptions import ExternalServiceError
+from app.domain.exceptions import ImportInProgressError
 from app.domain.pagination import PageResult, PaginationParams
 from app.infrastructure.repositories.sqlalchemy_starship_repository import (
     SQLAlchemyStarshipRepository,
@@ -118,9 +118,8 @@ class StarshipServiceImpl(StarshipServiceInterface):
                     self._logger.info("Import starships: reading from cache")
                     return ImportResult.from_dict(json.loads(cached))
             
-            raise ExternalServiceError(
-                "Starwars API",
-                "Timed out waiting for starships import",
+            raise ImportInProgressError(
+                "starships",
             )
         
         try:

@@ -15,7 +15,7 @@ from app.domain.import_result import ImportResult
 from app.domain.interfaces.character_service import CharacterService as CharacterServiceInterface
 from app.domain.interfaces.swapi_client import SWAPIClient
 from app.domain.interfaces.lock_provider import LockProvider
-from app.domain.exceptions import ExternalServiceError
+from app.domain.exceptions import ImportInProgressError
 from app.domain.pagination import PageResult, PaginationParams
 from app.infrastructure.repositories.sqlalchemy_character_repository import (
     SQLAlchemyCharacterRepository,
@@ -118,9 +118,8 @@ class CharacterServiceImpl(CharacterServiceInterface):
                     self._logger.info("Import characters: reading from cache")
                     return ImportResult.from_dict(json.loads(cached))
             
-            raise ExternalServiceError(
-                "Starwars API",
-                "Timed out waiting for characters import",
+            raise ImportInProgressError(
+                "characters",
             )
 
         try:

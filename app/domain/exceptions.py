@@ -36,3 +36,14 @@ class ExternalServiceError(DomainError):
         """
         self.service_name = service_name
         super().__init__(f"{service_name} error: {message}")
+
+
+class ImportInProgressError(DomainError):
+    """Raised when an import is running elsewhere but did not finish within
+    the caller's wait budget. Distinct from `ExternalServiceError`: nothing
+    failed, the work is simply still in progress — the client should retry.
+    """
+    def __init__(self, resource: str) -> None:
+        self.resource = resource
+        super().__init__(f"An import for '{resource}' is in progress; retry shortly")
+

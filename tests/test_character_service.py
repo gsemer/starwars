@@ -6,7 +6,7 @@ import uuid
 from unittest.mock import AsyncMock, patch
 
 from app.domain.entities.character import Character
-from app.domain.exceptions import EntityNotFoundError, ExternalServiceError
+from app.domain.exceptions import EntityNotFoundError, ImportInProgressError
 from app.domain.import_result import ImportResult
 from app.domain.pagination import PageResult, PaginationParams
 from app.services.character_service import CharacterServiceImpl
@@ -132,7 +132,7 @@ class ImportTests(unittest.IsolatedAsyncioTestCase):
         lock.get_value = AsyncMock(return_value=None)
         service, _, _ = build_service(lock_provider=lock)
         with patch("app.services.character_service.asyncio.sleep", new=AsyncMock()):
-            with self.assertRaises(ExternalServiceError):
+            with self.assertRaises(ImportInProgressError):
                 await service.import_characters()
 
 

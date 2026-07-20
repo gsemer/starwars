@@ -6,7 +6,7 @@ import uuid
 from unittest.mock import AsyncMock, patch
 
 from app.domain.entities.starship import Starship
-from app.domain.exceptions import EntityNotFoundError, ExternalServiceError
+from app.domain.exceptions import EntityNotFoundError, ImportInProgressError
 from app.domain.pagination import PageResult, PaginationParams
 from app.services.starship_service import StarshipServiceImpl
 from tests.support import (
@@ -108,7 +108,7 @@ class ImportTests(unittest.IsolatedAsyncioTestCase):
         lock.get_value = AsyncMock(return_value=None)
         service, _, _ = build_service(lock_provider=lock)
         with patch("app.services.starship_service.asyncio.sleep", new=AsyncMock()):
-            with self.assertRaises(ExternalServiceError):
+            with self.assertRaises(ImportInProgressError):
                 await service.import_starships()
 
 

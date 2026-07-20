@@ -5,7 +5,7 @@ import logging
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
-from app.domain.exceptions import DomainError, EntityNotFoundError, ExternalServiceError
+from app.domain.exceptions import DomainError, EntityNotFoundError, ExternalServiceError, ImportInProgressError
 
 _logger = logging.getLogger("app")
 
@@ -50,3 +50,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         """Catch-all: maps any unhandled exception to `500 Internal Server Error`."""
         _logger.error("unhandled_exception error=%s error_type=%s", exc, type(exc).__name__)
         return _error_response(status.HTTP_500_INTERNAL_SERVER_ERROR, "An unexpected error occurred.", "INTERNAL_SERVER_ERROR")
+
+    @app.exception_handler(ImportInProgressError)
+    async def import_in_progress_handler(request: Request, exc: ImportInProgressError) -> JSONResponse:
+        return _error_response(status.HTTP_409_CONFLICT, str(exc), "IMPORT_IN_PROGRESS")
